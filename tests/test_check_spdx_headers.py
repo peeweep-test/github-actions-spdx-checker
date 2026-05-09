@@ -275,9 +275,64 @@ class TestValidateModifiedFile(unittest.TestCase):
             violations,
         )
         self.assertEqual(len(violations), 1)
-        self.assertIn("should be", violations[0].message_en)
+        self.assertIn("2023-2026", violations[0].message_en)
         self.assertIn("Current:", violations[0].message_en)
         self.assertIn("Expected:", violations[0].message_en)
+
+    def test_modified_file_old_year_without_creation_year(self):
+        """Test modified file with old year when creation_year is None (fallback)."""
+        violations = []
+        header = "// SPDX-FileCopyrightText: 2023 Test Corp"
+        validate_modified_file(
+            "test.py",
+            "2023",
+            True,
+            None,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
+        self.assertEqual(len(violations), 1)
+        self.assertIn("should be 2026", violations[0].message_en)
+        self.assertNotIn("2023-2026", violations[0].message_en)
+
+    def test_modified_file_old_year_with_different_creation_year(self):
+        """Test modified file where header year differs from creation_year."""
+        violations = []
+        header = "// SPDX-FileCopyrightText: 2024 Test Corp"
+        validate_modified_file(
+            "test.py",
+            "2024",
+            True,
+            2022,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
+        self.assertEqual(len(violations), 1)
+        self.assertIn("2022-2026", violations[0].message_en)
+        self.assertIn("Current:", violations[0].message_en)
+        self.assertIn("Expected:", violations[0].message_en)
+
+    def test_modified_file_creation_year_equals_current(self):
+        """Test modified file where creation_year equals current_year."""
+        violations = []
+        header = "// SPDX-FileCopyrightText: 2023 Test Corp"
+        validate_modified_file(
+            "test.py",
+            "2023",
+            True,
+            2026,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
+        self.assertEqual(len(violations), 1)
+        self.assertIn("should be 2026", violations[0].message_en)
+        self.assertNotIn("2026-2026", violations[0].message_en)
 
     def test_modified_file_with_correct_range(self):
         """Test modified file with correct year range."""
